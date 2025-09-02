@@ -1,0 +1,751 @@
+# Jest JavaScript テスト 新人エンジニア向けチートシート
+
+## 📖 目次
+1. [Jestとは？](#jestとは)
+2. [セットアップ](#セットアップ)
+3. [基本的なテストの書き方](#基本的なテストの書き方)
+4. [よく使うマッチャー](#よく使うマッチャー)
+5. [テストの構造化](#テストの構造化)
+6. [非同期テスト](#非同期テスト)
+7. [モックとスパイ](#モックとスパイ)
+8. [セットアップとクリーンアップ](#セットアップとクリーンアップ)
+9. [スナップショットテスト](#スナップショットテスト)
+10. [実践的なテスト例](#実践的なテスト例)
+11. [よくあるエラーと解決方法](#よくあるエラーと解決方法)
+12. [ベストプラクティス](#ベストプラクティス)
+
+---
+
+## Jestとは？
+
+**Jest**は、Facebookが開発したJavaScript用のテストフレームワークです。
+
+### 特徴
+- ✅ **設定不要**：すぐに使い始められる
+- ✅ **高速**：並列実行でテストが速い
+- ✅ **豊富な機能**：アサーション、モック、カバレッジなど全部入り
+- ✅ **スナップショットテスト**：UIの変更を簡単に検出
+
+---
+
+## セットアップ
+
+### インストール
+
+```bash
+# npmの場合
+npm install --save-dev jest
+
+# yarnの場合  
+yarn add --dev jest
+```
+
+### package.jsonの設定
+
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  }
+}
+```
+
+### 基本設定ファイル（jest.config.js）
+
+```javascript
+module.exports = {
+  // テストファイルのパターン
+  testMatch: [
+    "**/__tests__/**/*.js",
+    "**/?(*.)+(spec|test).js"
+  ],
+  
+  // カバレッジを取得する対象
+  collectCoverageFrom: [
+    "src/**/*.js",
+    "!src/index.js"
+  ],
+  
+  // テスト環境（デフォルトはnode）
+  testEnvironment: "node" // または "jsdom"
+};
+```
+
+---
+
+## 基本的なテストの書き方
+
+### 最もシンプルなテスト
+
+```javascript
+// math.js
+function add(a, b) {
+  return a + b;
+}
+
+function multiply(a, b) {
+  return a * b;
+}
+
+module.exports = { add, multiply };
+```
+
+```javascript
+// math.test.js
+const { add, multiply } = require('./math');
+
+test('1 + 2 は 3 である', () => {
+  expect(add(1, 2)).toBe(3);
+});
+
+test('3 × 4 は 12 である', () => {
+  expect(multiply(3, 4)).toBe(12);
+});
+```
+
+### テストの基本構造
+
+```javascript
+test('テストの説明', () => {
+  // 準備（Arrange）
+  const input = 5;
+  const expected = 25;
+  
+  // 実行（Act）
+  const result = square(input);
+  
+  // 検証（Assert）
+  expect(result).toBe(expected);
+});
+```
+
+---
+
+## よく使うマッチャー
+
+### 等価性のテスト
+
+```javascript
+test('等価性のテスト', () => {
+  // 完全一致（プリミティブ型用）
+  expect(2 + 2).toBe(4);
+  expect('hello').toBe('hello');
+  expect(true).toBe(true);
+  
+  // オブジェクトの内容比較
+  expect({ name: 'John', age: 30 }).toEqual({ name: 'John', age: 30 });
+  
+  // 配列の比較
+  expect([1, 2, 3]).toEqual([1, 2, 3]);
+});
+```
+
+### 真偽値のテスト
+
+```javascript
+test('真偽値のテスト', () => {
+  expect(true).toBeTruthy();
+  expect(false).toBeFalsy();
+  expect(null).toBeFalsy();
+  expect(undefined).toBeFalsy();
+  expect(0).toBeFalsy();
+  expect('').toBeFalsy();
+  
+  expect('hello').toBeTruthy();
+  expect(1).toBeTruthy();
+  expect([]).toBeTruthy(); // 空配列もtruthyなので注意！
+});
+```
+
+### 数値のテスト
+
+```javascript
+test('数値のテスト', () => {
+  expect(2 + 2).toBeGreaterThan(3);
+  expect(2 + 2).toBeGreaterThanOrEqual(4);
+  expect(2 + 2).toBeLessThan(5);
+  expect(2 + 2).toBeLessThanOrEqual(4);
+  
+  // 浮動小数点数の比較
+  expect(0.1 + 0.2).toBeCloseTo(0.3);
+});
+```
+
+### 文字列のテスト
+
+```javascript
+test('文字列のテスト', () => {
+  expect('hello world').toMatch('world');
+  expect('hello world').toMatch(/world/);
+  expect('hello world').not.toMatch('goodbye');
+  
+  expect('hello@example.com').toMatch(/\w+@\w+\.\w+/);
+});
+```
+
+### 配列・オブジェクトのテスト
+
+```javascript
+test('配列のテスト', () => {
+  const fruits = ['apple', 'banana', 'orange'];
+  
+  expect(fruits).toContain('banana');
+  expect(fruits).toHaveLength(3);
+  expect(fruits[0]).toBe('apple');
+});
+
+test('オブジェクトのテスト', () => {
+  const user = { name: 'John', age: 30, email: 'john@example.com' };
+  
+  expect(user).toHaveProperty('name');
+  expect(user).toHaveProperty('age', 30);
+  expect(user.name).toBe('John');
+});
+```
+
+### 例外のテスト
+
+```javascript
+function throwError() {
+  throw new Error('何かがおかしい！');
+}
+
+test('例外のテスト', () => {
+  expect(() => {
+    throwError();
+  }).toThrow();
+  
+  expect(() => {
+    throwError();
+  }).toThrow('何かがおかしい！');
+  
+  expect(() => {
+    throwError();
+  }).toThrow(/おかしい/);
+});
+```
+
+---
+
+## テストの構造化
+
+### describe を使ったグループ化
+
+```javascript
+describe('Calculator', () => {
+  describe('add関数', () => {
+    test('正の数の足し算', () => {
+      expect(add(2, 3)).toBe(5);
+    });
+    
+    test('負の数の足し算', () => {
+      expect(add(-2, -3)).toBe(-5);
+    });
+    
+    test('0との足し算', () => {
+      expect(add(5, 0)).toBe(5);
+    });
+  });
+  
+  describe('subtract関数', () => {
+    test('正の数の引き算', () => {
+      expect(subtract(5, 3)).toBe(2);
+    });
+  });
+});
+```
+
+### test.each でパラメータ化テスト
+
+```javascript
+test.each([
+  [1, 2, 3],
+  [2, 3, 5],
+  [3, 4, 7],
+])('add(%i, %i) = %i', (a, b, expected) => {
+  expect(add(a, b)).toBe(expected);
+});
+
+// オブジェクト形式
+test.each([
+  { a: 1, b: 2, expected: 3 },
+  { a: 2, b: 3, expected: 5 },
+  { a: 3, b: 4, expected: 7 },
+])('add($a, $b) = $expected', ({ a, b, expected }) => {
+  expect(add(a, b)).toBe(expected);
+});
+```
+
+---
+
+## 非同期テスト
+
+### Promiseのテスト
+
+```javascript
+// async/await を使う方法（推奨）
+test('非同期関数のテスト', async () => {
+  const data = await fetchData();
+  expect(data).toBe('データ');
+});
+
+// .resolves を使う方法
+test('Promiseが解決される', () => {
+  return expect(fetchData()).resolves.toBe('データ');
+});
+
+// .rejects を使う方法
+test('Promiseが拒否される', () => {
+  return expect(fetchDataWithError()).rejects.toThrow('エラー');
+});
+```
+
+### コールバック関数のテスト
+
+```javascript
+function fetchDataCallback(callback) {
+  setTimeout(() => {
+    callback(null, 'データ');
+  }, 100);
+}
+
+test('コールバック関数のテスト', (done) => {
+  fetchDataCallback((error, data) => {
+    try {
+      expect(data).toBe('データ');
+      done();
+    } catch (error) {
+      done(error);
+    }
+  });
+});
+```
+
+---
+
+## モックとスパイ
+
+### 関数のモック
+
+```javascript
+test('モック関数の基本', () => {
+  const mockFn = jest.fn();
+  
+  // 戻り値を設定
+  mockFn.mockReturnValue(42);
+  
+  // 関数を実行
+  const result = mockFn();
+  
+  // 検証
+  expect(result).toBe(42);
+  expect(mockFn).toHaveBeenCalled();
+  expect(mockFn).toHaveBeenCalledTimes(1);
+});
+
+test('引数をチェック', () => {
+  const mockFn = jest.fn();
+  
+  mockFn('hello', 'world');
+  
+  expect(mockFn).toHaveBeenCalledWith('hello', 'world');
+  expect(mockFn).toHaveBeenLastCalledWith('hello', 'world');
+});
+```
+
+### モジュールのモック
+
+```javascript
+// userService.js
+const axios = require('axios');
+
+async function getUser(id) {
+  const response = await axios.get(`/users/${id}`);
+  return response.data;
+}
+
+module.exports = { getUser };
+```
+
+```javascript
+// userService.test.js
+const axios = require('axios');
+const { getUser } = require('./userService');
+
+// axiosをモック化
+jest.mock('axios');
+const mockedAxios = axios;
+
+test('ユーザー情報を取得', async () => {
+  const userData = { id: 1, name: 'John' };
+  mockedAxios.get.mockResolvedValue({ data: userData });
+  
+  const user = await getUser(1);
+  
+  expect(user).toEqual(userData);
+  expect(mockedAxios.get).toHaveBeenCalledWith('/users/1');
+});
+```
+
+### スパイ
+
+```javascript
+const utils = require('./utils');
+
+test('関数が呼ばれたかスパイ', () => {
+  const spy = jest.spyOn(utils, 'formatDate');
+  spy.mockReturnValue('2024-01-01');
+  
+  const result = utils.formatDate(new Date());
+  
+  expect(result).toBe('2024-01-01');
+  expect(spy).toHaveBeenCalled();
+  
+  // スパイをリストア
+  spy.mockRestore();
+});
+```
+
+---
+
+## セットアップとクリーンアップ
+
+### フック関数
+
+```javascript
+describe('データベーステスト', () => {
+  let db;
+  
+  // 全テスト開始前に1回実行
+  beforeAll(async () => {
+    db = await connectToDatabase();
+  });
+  
+  // 各テスト開始前に実行
+  beforeEach(async () => {
+    await db.clear();
+    await db.seed();
+  });
+  
+  // 各テスト終了後に実行
+  afterEach(async () => {
+    await db.cleanup();
+  });
+  
+  // 全テスト終了後に1回実行
+  afterAll(async () => {
+    await db.disconnect();
+  });
+  
+  test('ユーザーを作成', async () => {
+    const user = await db.createUser({ name: 'John' });
+    expect(user.name).toBe('John');
+  });
+});
+```
+
+---
+
+## スナップショットテスト
+
+```javascript
+// component.js
+function renderUser(user) {
+  return `
+    <div class="user">
+      <h2>${user.name}</h2>
+      <p>Email: ${user.email}</p>
+      <p>Age: ${user.age}</p>
+    </div>
+  `;
+}
+
+// component.test.js
+test('ユーザーコンポーネントのスナップショット', () => {
+  const user = {
+    name: 'John Doe',
+    email: 'john@example.com',
+    age: 30
+  };
+  
+  const rendered = renderUser(user);
+  expect(rendered).toMatchSnapshot();
+});
+```
+
+---
+
+## 実践的なテスト例
+
+### ユーザー管理クラスのテスト
+
+```javascript
+// UserManager.js
+class UserManager {
+  constructor() {
+    this.users = [];
+  }
+  
+  addUser(user) {
+    if (!user.name || !user.email) {
+      throw new Error('名前とメールは必須です');
+    }
+    
+    const existingUser = this.users.find(u => u.email === user.email);
+    if (existingUser) {
+      throw new Error('このメールアドレスは既に使用されています');
+    }
+    
+    const newUser = { ...user, id: Date.now() };
+    this.users.push(newUser);
+    return newUser;
+  }
+  
+  getUserByEmail(email) {
+    return this.users.find(user => user.email === email);
+  }
+  
+  getAllUsers() {
+    return [...this.users];
+  }
+}
+
+module.exports = UserManager;
+```
+
+```javascript
+// UserManager.test.js
+const UserManager = require('./UserManager');
+
+describe('UserManager', () => {
+  let userManager;
+  
+  beforeEach(() => {
+    userManager = new UserManager();
+  });
+  
+  describe('addUser', () => {
+    test('正常なユーザーを追加できる', () => {
+      const user = { name: 'John', email: 'john@example.com' };
+      const addedUser = userManager.addUser(user);
+      
+      expect(addedUser).toHaveProperty('id');
+      expect(addedUser.name).toBe('John');
+      expect(addedUser.email).toBe('john@example.com');
+    });
+    
+    test('名前が空の場合エラーを投げる', () => {
+      const user = { email: 'john@example.com' };
+      
+      expect(() => {
+        userManager.addUser(user);
+      }).toThrow('名前とメールは必須です');
+    });
+    
+    test('重複したメールアドレスでエラーを投げる', () => {
+      const user1 = { name: 'John', email: 'john@example.com' };
+      const user2 = { name: 'Jane', email: 'john@example.com' };
+      
+      userManager.addUser(user1);
+      
+      expect(() => {
+        userManager.addUser(user2);
+      }).toThrow('このメールアドレスは既に使用されています');
+    });
+  });
+  
+  describe('getUserByEmail', () => {
+    test('存在するユーザーを取得できる', () => {
+      const user = { name: 'John', email: 'john@example.com' };
+      userManager.addUser(user);
+      
+      const foundUser = userManager.getUserByEmail('john@example.com');
+      
+      expect(foundUser).toBeTruthy();
+      expect(foundUser.email).toBe('john@example.com');
+    });
+    
+    test('存在しないユーザーの場合undefinedを返す', () => {
+      const foundUser = userManager.getUserByEmail('notfound@example.com');
+      
+      expect(foundUser).toBeUndefined();
+    });
+  });
+});
+```
+
+---
+
+## よくあるエラーと解決方法
+
+### エラー: Cannot find module 'jest'
+
+```bash
+# 解決方法: Jestをインストール
+npm install --save-dev jest
+```
+
+### エラー: ReferenceError: describe is not defined
+
+```javascript
+// 解決方法: jest環境を設定
+// package.json または jest.config.js で
+{
+  "testEnvironment": "node"
+}
+```
+
+### エラー: async/awaitが動かない
+
+```javascript
+// 悪い例
+test('非同期テスト', () => {
+  const result = async () => await fetchData();
+  expect(result).toBe('data'); // これは動かない
+});
+
+// 良い例
+test('非同期テスト', async () => {
+  const result = await fetchData();
+  expect(result).toBe('data');
+});
+```
+
+### エラー: モックが効かない
+
+```javascript
+// 悪い例: モックの順序が間違っている
+const { getData } = require('./data');
+jest.mock('./api'); // requireより後だと効かない
+
+// 良い例
+jest.mock('./api');
+const { getData } = require('./data');
+```
+
+---
+
+## ベストプラクティス
+
+### テスト名の付け方
+
+```javascript
+// ❌ 悪い例
+test('test1', () => {});
+test('add function', () => {});
+
+// ✅ 良い例  
+test('add(2, 3) は 5 を返す', () => {});
+test('空の配列の場合、0を返す', () => {});
+test('無効なメールアドレスの場合、エラーを投げる', () => {});
+```
+
+### AAA パターンを使う
+
+```javascript
+test('ユーザーの年齢を計算する', () => {
+  // Arrange（準備）
+  const birthDate = new Date('1990-01-01');
+  const currentDate = new Date('2024-01-01');
+  
+  // Act（実行）
+  const age = calculateAge(birthDate, currentDate);
+  
+  // Assert（検証）
+  expect(age).toBe(34);
+});
+```
+
+### 1つのテストで1つのことだけをテストする
+
+```javascript
+// ❌ 悪い例
+test('ユーザー機能', () => {
+  const user = createUser({ name: 'John' });
+  expect(user.name).toBe('John');
+  
+  const users = getAllUsers();
+  expect(users).toHaveLength(1);
+  
+  deleteUser(user.id);
+  expect(getAllUsers()).toHaveLength(0);
+});
+
+// ✅ 良い例
+test('createUser は新しいユーザーを作成する', () => {
+  const user = createUser({ name: 'John' });
+  expect(user.name).toBe('John');
+});
+
+test('deleteUser は指定されたユーザーを削除する', () => {
+  const user = createUser({ name: 'John' });
+  deleteUser(user.id);
+  expect(getAllUsers()).not.toContain(user);
+});
+```
+
+### テストは独立させる
+
+```javascript
+// ❌ 悪い例：テスト間で状態を共有
+let counter = 0;
+
+test('カウンターを増やす', () => {
+  counter++;
+  expect(counter).toBe(1);
+});
+
+test('カウンターをさらに増やす', () => {
+  counter++; // 前のテストに依存している
+  expect(counter).toBe(2);
+});
+
+// ✅ 良い例：各テストで独立した状態
+test('カウンターを増やす', () => {
+  const counter = new Counter();
+  counter.increment();
+  expect(counter.value).toBe(1);
+});
+```
+
+### 意味のあるテストデータを使う
+
+```javascript
+// ❌ 悪い例
+test('ユーザー作成', () => {
+  const user = createUser('aaa', 'bbb@ccc.com');
+  expect(user.name).toBe('aaa');
+});
+
+// ✅ 良い例
+test('有効な情報でユーザーを作成する', () => {
+  const user = createUser('山田太郎', 'yamada@example.com');
+  expect(user.name).toBe('山田太郎');
+  expect(user.email).toBe('yamada@example.com');
+});
+```
+
+---
+
+## 🎯 まとめ
+
+Jestを使ったテストの基本から応用まで、実際のコード例を通して学習できるようまとめました。
+
+### 覚えておきたいポイント
+
+1. **基本構文**: `test()`, `expect()`, `toBe()`, `toEqual()`
+2. **非同期テスト**: `async/await` を使う
+3. **モック**: `jest.fn()`, `jest.mock()` で外部依存を制御
+4. **テスト構造**: `describe()` でグループ化
+5. **AAA パターン**: Arrange, Act, Assert で明確に
+
+### 次のステップ
+
+- より高度なマッチャーを学ぶ
+- カバレッジレポートの見方を覚える
+- CI/CDでのテスト自動化
+- TDD（テスト駆動開発）にチャレンジ
+
+頑張って良いテストを書いていきましょう！🚀
