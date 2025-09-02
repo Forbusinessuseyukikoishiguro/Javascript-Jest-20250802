@@ -1,0 +1,496 @@
+# Jest練習プロジェクト - 足し算・引き算テスト
+
+VS Codeで実際に動かせるJestテストの練習プロジェクトです！
+
+## 📁 プロジェクト構成
+
+```
+jest-practice/
+├── package.json
+├── jest.config.js
+├── src/
+│   ├── calculator.js          # テスト対象の関数
+│   └── __tests__/
+│       └── calculator.test.js  # テストファイル
+└── README.md
+```
+
+## 🚀 セットアップ手順
+
+### 1. 新しいフォルダを作成
+```bash
+mkdir jest-practice
+cd jest-practice
+```
+
+### 2. package.json を作成
+```json
+{
+  "name": "jest-practice",
+  "version": "1.0.0",
+  "description": "Jest練習プロジェクト",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
+  },
+  "keywords": ["jest", "testing", "javascript", "練習"],
+  "author": "あなたの名前",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.5.0"
+  }
+}
+```
+
+### 3. Jest設定ファイル (jest.config.js)
+```javascript
+module.exports = {
+  // テストファイルのパターン
+  testMatch: [
+    "**/__tests__/**/*.js",
+    "**/?(*.)+(spec|test).js"
+  ],
+  
+  // カバレッジ収集対象
+  collectCoverageFrom: [
+    "src/**/*.js",
+    "!src/**/*.test.js"
+  ],
+  
+  // 詳細な出力
+  verbose: true,
+  
+  // エラー時に詳細情報を表示
+  errorOnDeprecated: true
+};
+```
+
+## 📝 メイン実装ファイル
+
+### src/calculator.js
+```javascript
+/**
+ * 電卓機能の実装
+ * 足し算、引き算、その他の基本演算を提供
+ */
+
+/**
+ * 足し算を行う関数
+ * @param {number} a - 最初の数値
+ * @param {number} b - 2番目の数値
+ * @returns {number} a と b の合計
+ * @throws {Error} 引数が数値でない場合
+ */
+function add(a, b) {
+  // 型チェック：数値以外の場合はエラー
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    throw new Error('引数は数値である必要があります');
+  }
+  
+  // NaN（Not a Number）のチェック
+  if (isNaN(a) || isNaN(b)) {
+    throw new Error('引数はNaNであってはいけません');
+  }
+  
+  return a + b;
+}
+
+/**
+ * 引き算を行う関数
+ * @param {number} a - 引かれる数
+ * @param {number} b - 引く数
+ * @returns {number} a から b を引いた結果
+ * @throws {Error} 引数が数値でない場合
+ */
+function subtract(a, b) {
+  // 型チェック：数値以外の場合はエラー
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    throw new Error('引数は数値である必要があります');
+  }
+  
+  // NaN（Not a Number）のチェック
+  if (isNaN(a) || isNaN(b)) {
+    throw new Error('引数はNaNであってはいけません');
+  }
+  
+  return a - b;
+}
+
+/**
+ * 複数の数値を足し算する関数
+ * @param {...number} numbers - 足し算する数値たち
+ * @returns {number} 全ての数値の合計
+ * @throws {Error} 引数が数値でない場合
+ */
+function addMany(...numbers) {
+  // 引数がない場合は0を返す
+  if (numbers.length === 0) {
+    return 0;
+  }
+  
+  // 全ての引数が数値かチェック
+  for (let i = 0; i < numbers.length; i++) {
+    if (typeof numbers[i] !== 'number' || isNaN(numbers[i])) {
+      throw new Error(`引数${i + 1}が無効な数値です: ${numbers[i]}`);
+    }
+  }
+  
+  // reduce関数を使って合計を計算
+  return numbers.reduce((sum, current) => sum + current, 0);
+}
+
+/**
+ * 絶対値の差を計算する関数
+ * @param {number} a - 1つ目の数値
+ * @param {number} b - 2つ目の数値
+ * @returns {number} |a - b| の結果
+ */
+function absoluteDifference(a, b) {
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    throw new Error('引数は数値である必要があります');
+  }
+  
+  if (isNaN(a) || isNaN(b)) {
+    throw new Error('引数はNaNであってはいけません');
+  }
+  
+  return Math.abs(a - b);
+}
+
+// 関数をエクスポート（他のファイルから使えるようにする）
+module.exports = {
+  add,
+  subtract,
+  addMany,
+  absoluteDifference
+};
+```
+
+## 🧪 テストファイル
+
+### src/__tests__/calculator.test.js
+```javascript
+// テスト対象の関数をインポート
+const { add, subtract, addMany, absoluteDifference } = require('../calculator');
+
+/**
+ * 足し算テスト群
+ */
+describe('add 関数のテスト', () => {
+  
+  describe('正常なケース', () => {
+    test('正の数同士の足し算', () => {
+      // Arrange（準備）
+      const a = 2;
+      const b = 3;
+      
+      // Act（実行）
+      const result = add(a, b);
+      
+      // Assert（確認）
+      expect(result).toBe(5);
+    });
+
+    test('負の数同士の足し算', () => {
+      expect(add(-5, -3)).toBe(-8);
+      expect(add(-10, -20)).toBe(-30);
+    });
+
+    test('正の数と負の数の足し算', () => {
+      expect(add(10, -3)).toBe(7);
+      expect(add(-10, 15)).toBe(5);
+      expect(add(5, -5)).toBe(0);
+    });
+
+    test('ゼロを含む足し算', () => {
+      expect(add(0, 0)).toBe(0);
+      expect(add(0, 5)).toBe(5);
+      expect(add(5, 0)).toBe(5);
+      expect(add(-3, 0)).toBe(-3);
+    });
+
+    test('小数の足し算', () => {
+      // 浮動小数点は toBeCloseTo を使用
+      expect(add(0.1, 0.2)).toBeCloseTo(0.3);
+      expect(add(3.14, 2.86)).toBeCloseTo(6.0);
+      expect(add(-1.5, 2.7)).toBeCloseTo(1.2);
+    });
+
+    test('大きな数値の足し算', () => {
+      expect(add(1000000, 2000000)).toBe(3000000);
+      expect(add(-999999, 1000000)).toBe(1);
+    });
+  });
+
+  describe('エラーケース', () => {
+    test('文字列が渡された場合はエラー', () => {
+      expect(() => add('5', 3)).toThrow('引数は数値である必要があります');
+      expect(() => add(5, '3')).toThrow('引数は数値である必要があります');
+      expect(() => add('hello', 'world')).toThrow('引数は数値である必要があります');
+    });
+
+    test('null・undefinedが渡された場合はエラー', () => {
+      expect(() => add(null, 5)).toThrow('引数は数値である必要があります');
+      expect(() => add(undefined, 5)).toThrow('引数は数値である必要があります');
+      expect(() => add(5, null)).toThrow('引数は数値である必要があります');
+    });
+
+    test('NaNが渡された場合はエラー', () => {
+      expect(() => add(NaN, 5)).toThrow('引数はNaNであってはいけません');
+      expect(() => add(5, NaN)).toThrow('引数はNaNであってはいけません');
+      expect(() => add(NaN, NaN)).toThrow('引数はNaNであってはいけません');
+    });
+
+    test('オブジェクト・配列が渡された場合はエラー', () => {
+      expect(() => add({}, 5)).toThrow('引数は数値である必要があります');
+      expect(() => add([], 5)).toThrow('引数は数値である必要があります');
+      expect(() => add(5, {})).toThrow('引数は数値である必要があります');
+    });
+  });
+});
+
+/**
+ * 引き算テスト群
+ */
+describe('subtract 関数のテスト', () => {
+  
+  describe('正常なケース', () => {
+    test('正の数同士の引き算', () => {
+      expect(subtract(10, 3)).toBe(7);
+      expect(subtract(100, 50)).toBe(50);
+      expect(subtract(1, 1)).toBe(0);
+    });
+
+    test('負の数同士の引き算', () => {
+      expect(subtract(-5, -3)).toBe(-2); // -5 - (-3) = -5 + 3 = -2
+      expect(subtract(-10, -20)).toBe(10); // -10 - (-20) = -10 + 20 = 10
+    });
+
+    test('正の数から負の数を引く', () => {
+      expect(subtract(5, -3)).toBe(8); // 5 - (-3) = 5 + 3 = 8
+      expect(subtract(10, -10)).toBe(20); // 10 - (-10) = 10 + 10 = 20
+    });
+
+    test('負の数から正の数を引く', () => {
+      expect(subtract(-5, 3)).toBe(-8); // -5 - 3 = -8
+      expect(subtract(-10, 15)).toBe(-25); // -10 - 15 = -25
+    });
+
+    test('ゼロを含む引き算', () => {
+      expect(subtract(0, 0)).toBe(0);
+      expect(subtract(5, 0)).toBe(5);
+      expect(subtract(0, 5)).toBe(-5);
+      expect(subtract(-3, 0)).toBe(-3);
+    });
+
+    test('小数の引き算', () => {
+      expect(subtract(1.5, 0.3)).toBeCloseTo(1.2);
+      expect(subtract(3.14, 1.14)).toBeCloseTo(2.0);
+      expect(subtract(0.1, 0.2)).toBeCloseTo(-0.1);
+    });
+  });
+
+  describe('エラーケース', () => {
+    test('無効な引数に対するエラー', () => {
+      expect(() => subtract('10', 5)).toThrow('引数は数値である必要があります');
+      expect(() => subtract(10, '5')).toThrow('引数は数値である必要があります');
+      expect(() => subtract(null, 5)).toThrow('引数は数値である必要があります');
+      expect(() => subtract(NaN, 5)).toThrow('引数はNaNであってはいけません');
+    });
+  });
+});
+
+/**
+ * 複数数値の足し算テスト群
+ */
+describe('addMany 関数のテスト', () => {
+  
+  test('引数なしの場合は0を返す', () => {
+    expect(addMany()).toBe(0);
+  });
+
+  test('1つの引数の場合はその値を返す', () => {
+    expect(addMany(5)).toBe(5);
+    expect(addMany(-3)).toBe(-3);
+    expect(addMany(0)).toBe(0);
+  });
+
+  test('複数の正の数の足し算', () => {
+    expect(addMany(1, 2, 3)).toBe(6);
+    expect(addMany(10, 20, 30, 40)).toBe(100);
+  });
+
+  test('正の数と負の数の混合', () => {
+    expect(addMany(10, -5, 3, -2)).toBe(6); // 10 - 5 + 3 - 2 = 6
+    expect(addMany(-1, -2, -3, 10)).toBe(4); // -1 - 2 - 3 + 10 = 4
+  });
+
+  test('たくさんの引数（10個以上）', () => {
+    expect(addMany(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)).toBe(55);
+  });
+
+  test('小数を含む複数の数値', () => {
+    expect(addMany(1.1, 2.2, 3.3)).toBeCloseTo(6.6);
+  });
+
+  describe('エラーケース', () => {
+    test('無効な引数が1つでも含まれている場合', () => {
+      expect(() => addMany(1, 2, '3')).toThrow('引数3が無効な数値です: 3');
+      expect(() => addMany(1, null, 3)).toThrow('引数2が無効な数値です: null');
+      expect(() => addMany(NaN, 2, 3)).toThrow('引数1が無効な数値です: NaN');
+    });
+  });
+});
+
+/**
+ * 絶対値の差テスト群
+ */
+describe('absoluteDifference 関数のテスト', () => {
+  
+  test('正の数同士の差', () => {
+    expect(absoluteDifference(10, 3)).toBe(7);
+    expect(absoluteDifference(3, 10)).toBe(7); // 順序に関係なく同じ結果
+  });
+
+  test('負の数同士の差', () => {
+    expect(absoluteDifference(-5, -3)).toBe(2);
+    expect(absoluteDifference(-3, -5)).toBe(2);
+  });
+
+  test('正の数と負の数の差', () => {
+    expect(absoluteDifference(5, -3)).toBe(8);
+    expect(absoluteDifference(-3, 5)).toBe(8);
+  });
+
+  test('同じ数値の差', () => {
+    expect(absoluteDifference(5, 5)).toBe(0);
+    expect(absoluteDifference(-3, -3)).toBe(0);
+    expect(absoluteDifference(0, 0)).toBe(0);
+  });
+
+  test('ゼロを含む差', () => {
+    expect(absoluteDifference(0, 5)).toBe(5);
+    expect(absoluteDifference(5, 0)).toBe(5);
+    expect(absoluteDifference(0, -5)).toBe(5);
+  });
+});
+
+/**
+ * 統合テスト（複数の関数を組み合わせ）
+ */
+describe('統合テスト', () => {
+  
+  test('足し算と引き算の組み合わせ', () => {
+    // (5 + 3) - (10 - 7) = 8 - 3 = 5
+    const sum = add(5, 3);           // 8
+    const difference = subtract(10, 7); // 3
+    const result = subtract(sum, difference); // 8 - 3 = 5
+    
+    expect(result).toBe(5);
+  });
+
+  test('複数関数の連続実行', () => {
+    const numbers = [1, 2, 3, 4, 5];
+    const total = addMany(...numbers);        // 15
+    const halfTotal = subtract(total, 7);     // 8
+    const final = add(halfTotal, 2);          // 10
+    
+    expect(final).toBe(10);
+  });
+
+  test('エラーハンドリングの一貫性', () => {
+    const invalidInputs = ['hello', null, undefined, NaN, {}, []];
+    
+    invalidInputs.forEach(input => {
+      expect(() => add(input, 5)).toThrow();
+      expect(() => subtract(input, 5)).toThrow();
+      expect(() => absoluteDifference(input, 5)).toThrow();
+    });
+  });
+});
+```
+
+## 🚀 実行方法
+
+### 1. 依存関係をインストール
+```bash
+npm install
+```
+
+### 2. テストを実行
+```bash
+# 基本的なテスト実行
+npm test
+
+# ファイル変更を監視してテストを自動実行
+npm run test:watch
+
+# カバレッジレポート付きでテスト実行
+npm run test:coverage
+
+# 詳細な結果を表示
+npm run test:verbose
+```
+
+### 3. VS Code での実行
+1. VS Code で「jest-practice」フォルダを開く
+2. ターミナルを開く（Ctrl + `）
+3. 上記のコマンドを実行
+
+## 📊 期待される結果
+
+### テスト成功時の出力例
+```
+ PASS  src/__tests__/calculator.test.js
+  add 関数のテスト
+    正常なケース
+      ✓ 正の数同士の足し算 (2 ms)
+      ✓ 負の数同士の足し算 (1 ms)
+      ✓ 正の数と負の数の足し算
+      ✓ ゼロを含む足し算 (1 ms)
+      ✓ 小数の足し算
+      ✓ 大きな数値の足し算
+    エラーケース
+      ✓ 文字列が渡された場合はエラー (1 ms)
+      ✓ null・undefinedが渡された場合はエラー
+      ✓ NaNが渡された場合はエラー
+      ✓ オブジェクト・配列が渡された場合はエラー (1 ms)
+  subtract 関数のテスト
+    ... (以下略)
+
+Test Suites: 1 passed, 1 total
+Tests:       25 passed, 25 total
+Snapshots:   0 total
+Time:        1.234 s
+```
+
+## 🎯 学習ポイント
+
+### 1. **基本的なテストパターン**
+- 正常ケース・エラーケースの両方をテスト
+- 境界値（0、負の数、小数）のテスト
+- Arrange-Act-Assert パターンの実践
+
+### 2. **Jest マッチャーの使い分け**
+- `toBe()` vs `toBeCloseTo()` （浮動小数点対応）
+- `toThrow()` でのエラーテスト
+- `describe()` と `test()` による階層化
+
+### 3. **実践的なテクニック**
+- 複数のテストケースをまとめて実行
+- エラーメッセージの詳細チェック
+- 統合テストによる関数の組み合わせテスト
+
+## 🔄 次のステップ
+
+このプロジェクトで基本を習得したら、以下にチャレンジしてみましょう：
+
+1. **掛け算・割り算の実装とテスト**
+2. **非同期処理（Promise）のテスト**
+3. **モック関数を使ったテスト**
+4. **ブラウザでの動作確認**
+
+頑張ってJestをマスターしましょう！🚀
