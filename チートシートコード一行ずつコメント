@@ -1,0 +1,1360 @@
+# Jest JavaScript テスト 新人エンジニア向けチートシート
+
+## 📚 Jestとは？
+
+Jestは Facebook（Meta）が開発したJavaScriptのテスティングフレームワークです。
+設定が簡単で、豊富な機能を持ち、多くのプロジェクトで使われています。
+
+## 🚀 セットアップ
+
+### インストール
+```bash
+# npm の場合
+npm install --save-dev jest
+
+# yarn の場合
+yarn add --dev jest
+```
+
+### package.jsonの設定
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  }
+}
+```
+
+## 📝 基本的なテストの書き方（一行ずつ詳細解説）
+
+### テストファイルの命名規則
+- `*.test.js` または `*.spec.js` （Jestが自動で認識する）
+- `__tests__` フォルダ内の `.js` ファイル （フォルダ名は固定）
+
+### 基本構文（超詳細コメント付き）
+```javascript
+// math.test.js ← ファイル名：テスト対象ファイル名 + .test.js
+
+// describe(): テストをグループ化する関数（テストスイート）
+// 第1引数：グループの説明（日本語OK）
+// 第2引数：アロー関数（実際のテストを記述）
+describe('数学関数のテスト', () => {
+  
+  // test(): 個別のテストケースを定義する関数
+  // 第1引数：このテストが何をテストするかの説明
+  // 第2引数：実際のテスト処理を記述するアロー関数
+  test('2 + 2 は 4 になる', () => {
+    // expect(): テスト対象の値を設定（実際の結果）
+    // .toBe(): マッチャー（期待する結果との比較方法）
+    // toBe()は厳密等価（===）で比較
+    expect(2 + 2).toBe(4);
+    //   ↑        ↑
+    //  実際の値   期待する値
+  });
+
+  // it(): test()と全く同じ機能（好みで使い分け）
+  // BDD（Behavior Driven Development）スタイルではit()を使う
+  it('3 * 3 は 9 になる', () => { 
+    expect(3 * 3).toBe(9);
+  });
+  
+  // ネストしたdescribeも可能（細かい分類用）
+  describe('足し算のテスト', () => {
+    test('正の数同士の足し算', () => {
+      expect(1 + 1).toBe(2);
+    });
+    
+    test('負の数同士の足し算', () => {
+      expect(-1 + (-1)).toBe(-2);
+    });
+  });
+});
+```
+
+## 🎯 主要なマッチャー（一行ずつ詳細解説）
+
+### 基本的な比較
+```javascript
+test('基本的な比較', () => {
+  // toBe(): プリミティブ値（数値、文字列、真偽値）の厳密等価比較
+  // 内部的に Object.is() を使用（=== とほぼ同じ）
+  expect(2 + 2).toBe(4);                    // 数値の比較
+  
+  // toEqual(): オブジェクトや配列の内容を再帰的に比較
+  // プロパティの値が同じなら、異なるオブジェクトでもtrue
+  expect({name: 'John'}).toEqual({name: 'John'}); 
+  // ↑ 異なるオブジェクト参照だが内容が同じなのでOK
+  
+  // not: マッチャーを否定する（期待と逆の結果を確認）
+  expect('hello').not.toBe('world');        // 'hello'は'world'ではない
+  // expect('hello').toBe('world'); ← これだとテスト失敗
+  
+  // 参考：toBe vs toEqual の違い
+  const obj1 = {name: 'John'};
+  const obj2 = {name: 'John'};
+  const obj3 = obj1; // 同じ参照
+  
+  expect(obj1).toBe(obj3);     // ✅ 同じ参照なのでOK
+  expect(obj1).toBe(obj2);     // ❌ 異なる参照なので失敗
+  expect(obj1).toEqual(obj2);  // ✅ 内容が同じなのでOK
+});
+```
+
+### 数値（一行ずつ詳細解説）
+```javascript
+test('数値のテスト', () => {
+  const result = 2 + 2; // テスト対象の値：4
+  
+  // toBeGreaterThan(): >（より大きい）
+  expect(result).toBeGreaterThan(3);         // 4 > 3 → true
+  // expect(result).toBeGreaterThan(4);      // 4 > 4 → false（失敗）
+  
+  // toBeGreaterThanOrEqual(): >=（以上）
+  expect(result).toBeGreaterThanOrEqual(4);  // 4 >= 4 → true
+  expect(result).toBeGreaterThanOrEqual(3);  // 4 >= 3 → true
+  
+  // toBeLessThan(): <（より小さい）
+  expect(result).toBeLessThan(5);            // 4 < 5 → true
+  
+  // toBeLessThanOrEqual(): <=（以下）
+  expect(result).toBeLessThanOrEqual(4);     // 4 <= 4 → true
+  
+  // toBeCloseTo(): 浮動小数点の近似比較（重要！）
+  // JavaScriptの浮動小数点は計算誤差があるため必須
+  const floatResult = 0.1 + 0.2; // = 0.30000000000000004（誤差あり）
+  expect(floatResult).toBeCloseTo(0.3);      // 近似値で比較してtrue
+  // expect(floatResult).toBe(0.3);          // 厳密比較だと失敗する
+  
+  // 第2引数で精度を指定可能（デフォルト：2桁）
+  expect(floatResult).toBeCloseTo(0.3, 5);   // 小数点以下5桁まで
+});
+```
+
+### 文字列（一行ずつ詳細解説）
+```javascript
+test('文字列のテスト', () => {
+  const message = 'Hello World';
+  const email = 'test@example.com';
+  
+  // toMatch(): 文字列の部分一致検索
+  expect(message).toMatch('World');    // 'World'という部分文字列を含む
+  expect(message).toMatch('Hello');    // 'Hello'という部分文字列を含む
+  // expect(message).toMatch('Goodbye'); // 含まないので失敗
+  
+  // toMatch()は正規表現も使用可能
+  expect(message).toMatch(/^Hello/);   // ^Hello: 'Hello'で始まる
+  expect(message).toMatch(/World$/);   // World$: 'World'で終わる
+  expect(message).toMatch(/hello/i);   // i: 大文字小文字を区別しない
+  
+  // 実用的な正規表現の例：メールアドレス形式チェック
+  // \S+: 空白以外の文字が1個以上
+  // @: アットマーク（そのまま）
+  // \.: ピリオド（.は特殊文字なので\でエスケープ）
+  expect(email).toMatch(/\S+@\S+\.\S+/); // 簡易メール形式チェック
+  
+  // より複雑な例
+  const phoneNumber = '090-1234-5678';
+  expect(phoneNumber).toMatch(/^\d{3}-\d{4}-\d{4}$/); // 携帯番号形式
+  //                          ↑ ↑   ↑    ↑    ↑
+  //                          ① ②   ③    ④    ⑤
+  // ①^: 文字列の開始  ②\d{3}: 数字3個  ③-: ハイフン
+  // ④\d{4}: 数字4個  ⑤$: 文字列の終了
+});
+```
+
+### 配列・オブジェクト（一行ずつ詳細解説）
+```javascript
+test('配列のテスト', () => {
+  // テスト用の配列を準備
+  const fruits = ['apple', 'banana', 'cherry'];
+  const numbers = [1, 2, 3, 4, 5];
+  const emptyArray = [];
+  
+  // toContain(): 配列に特定の要素が含まれているかチェック
+  expect(fruits).toContain('banana');        // 'banana'が含まれている
+  expect(numbers).toContain(3);              // 数値3が含まれている
+  // expect(fruits).toContain('orange');     // 含まれていないので失敗
+  
+  // toHaveLength(): 配列の長さをチェック
+  expect(fruits).toHaveLength(3);            // 配列の長さが3
+  expect(emptyArray).toHaveLength(0);        // 空配列の長さは0
+  // expect(fruits).toHaveLength(5);         // 長さが違うので失敗
+  
+  // toEqual(): 配列全体の内容を順序含めて比較
+  expect(fruits).toEqual(['apple', 'banana', 'cherry']); // 完全一致
+  // 順序も重要：以下は失敗する
+  // expect(fruits).toEqual(['banana', 'apple', 'cherry']);
+  
+  // 部分配列のテスト
+  expect(fruits.slice(0, 2)).toEqual(['apple', 'banana']); // 最初の2要素
+  
+  // 配列の各要素に対するテスト
+  fruits.forEach(fruit => {
+    expect(typeof fruit).toBe('string'); // 全て文字列型
+    expect(fruit.length).toBeGreaterThan(0); // 空文字列ではない
+  });
+});
+
+test('オブジェクトのテスト', () => {
+  // テスト用のオブジェクトを準備
+  const user = { 
+    name: 'John', 
+    age: 30, 
+    email: 'john@example.com',
+    address: null,      // nullを意図的に設定
+    hobbies: ['読書', '映画鑑賞']
+  };
+  
+  // toHaveProperty(): オブジェクトに指定プロパティが存在するかチェック
+  expect(user).toHaveProperty('name');       // 'name'プロパティが存在
+  expect(user).toHaveProperty('age');        // 'age'プロパティが存在
+  // expect(user).toHaveProperty('salary');  // 存在しないので失敗
+  
+  // toHaveProperty()は値もチェック可能（第2引数で期待値指定）
+  expect(user).toHaveProperty('name', 'John'); // nameプロパティの値が'John'
+  expect(user).toHaveProperty('age', 30);      // ageプロパティの値が30
+  
+  // ドット記法やブラケット記法でネストしたプロパティもチェック可能
+  // expect(user).toHaveProperty('profile.bio'); // ネストした例（今回はない）
+  
+  // toBeDefined(): undefined ではないことを確認
+  expect(user.email).toBeDefined();          // emailは定義されている
+  expect(user.address).toBeDefined();        // nullだが定義はされている
+  // expect(user.salary).toBeDefined();      // undefinedなので失敗
+  
+  // プロパティの型チェック
+  expect(typeof user.name).toBe('string');   // name は文字列
+  expect(typeof user.age).toBe('number');    // age は数値
+  expect(Array.isArray(user.hobbies)).toBe(true); // hobbies は配列
+  
+  // オブジェクト全体の比較
+  const expectedUser = {
+    name: 'John',
+    age: 30,
+    email: 'john@example.com',
+    address: null,
+    hobbies: ['読書', '映画鑑賞']
+  };
+  expect(user).toEqual(expectedUser);        // 内容が完全に一致
+  
+  // 部分的なオブジェクトマッチング
+  expect(user).toMatchObject({              // 指定したプロパティのみチェック
+    name: 'John',
+    age: 30
+  }); // email, address, hobbiesは無視される
+});
+```
+
+### null・undefined・boolean
+```javascript
+test('null・undefined・boolean のテスト', () => {
+  expect(null).toBeNull();                   // null
+  expect(undefined).toBeUndefined();         // undefined
+  expect('hello').toBeDefined();             // defined（nullでもundefinedでもない）
+  expect('').toBeFalsy();                    // falsy値
+  expect('hello').toBeTruthy();              // truthy値
+  expect(true).toBe(true);                   // boolean
+});
+```
+
+## 🔧 関数のテスト例（一行ずつ詳細解説）
+
+### テスト対象の関数（実装ファイル）
+```javascript
+// utils.js - テスト対象となる関数群
+
+// シンプルな足し算関数
+function add(a, b) {
+  return a + b;  // 引数a と b を足した結果を返す
+}
+
+// 掛け算関数
+function multiply(a, b) {
+  return a * b;  // 引数a と b を掛けた結果を返す
+}
+
+// 割り算関数（エラーハンドリング付き）
+function divide(a, b) {
+  // ガード句：不正な入力をチェック
+  if (b === 0) {
+    // ゼロ除算の場合はエラーを投げる（throw）
+    throw new Error('Division by zero');
+  }
+  return a / b;  // 正常な場合は割り算の結果を返す
+}
+
+// CommonJSの書き方でエクスポート（Node.js環境）
+// ES6の場合は export { add, multiply, divide };
+module.exports = { add, multiply, divide };
+```
+
+### テストファイル（一行ずつ詳細解説）
+```javascript
+// utils.test.js - 上記関数のテストファイル
+
+// CommonJSの書き方でインポート
+// ES6の場合は import { add, multiply, divide } from './utils';
+const { add, multiply, divide } = require('./utils');
+
+// describe(): 関連するテストをグループ化
+// 関数群をまとめてテストする時の基本パターン
+describe('計算関数のテスト', () => {
+  
+  // test(): 個別のテストケース
+  // 1つの関数に対して複数のテストケースを書くのが基本
+  test('add: 正の数の足し算', () => {
+    // Arrange（準備）: テスト用のデータを準備
+    const a = 2;
+    const b = 3;
+    
+    // Act（実行）: テスト対象の関数を実行
+    const result = add(a, b);
+    
+    // Assert（確認）: 期待する結果と比較
+    expect(result).toBe(5);
+    // より直接的に書くなら: expect(add(2, 3)).toBe(5);
+  });
+
+  test('add: 負の数の足し算', () => {
+    // 負の数同士の足し算もテストする（境界値テスト）
+    expect(add(-1, -1)).toBe(-2);
+    
+    // 正の数と負の数の組み合わせ
+    expect(add(5, -3)).toBe(2);
+    expect(add(-5, 3)).toBe(-2);
+  });
+
+  test('add: ゼロとの足し算', () => {
+    // ゼロは特別な値なので個別にテスト
+    expect(add(0, 0)).toBe(0);
+    expect(add(5, 0)).toBe(5);
+    expect(add(0, 5)).toBe(5);
+  });
+
+  test('multiply: 掛け算のテスト', () => {
+    // 基本的な掛け算
+    expect(multiply(3, 4)).toBe(12);
+    
+    // ゼロとの掛け算（重要なテストケース）
+    expect(multiply(5, 0)).toBe(0);
+    expect(multiply(0, 5)).toBe(0);
+    
+    // 負の数との掛け算
+    expect(multiply(-2, 3)).toBe(-6);
+    expect(multiply(-2, -3)).toBe(6);
+  });
+
+  test('divide: 正常な割り算', () => {
+    // 割り切れる場合
+    expect(divide(10, 2)).toBe(5);
+    expect(divide(15, 3)).toBe(5);
+    
+    // 割り切れない場合（小数になる）
+    expect(divide(10, 3)).toBeCloseTo(3.333333); // 浮動小数点なのでtoBeCloseTo
+    
+    // 負の数の割り算
+    expect(divide(-10, 2)).toBe(-5);
+    expect(divide(10, -2)).toBe(-5);
+    expect(divide(-10, -2)).toBe(5);
+  });
+
+  test('divide: ゼロ除算でエラーが発生', () => {
+    // toThrow(): 関数がエラーを投げることを確認するマッチャー
+    // 注意：関数を直接渡すのではなく、アロー関数で包む必要がある
+    expect(() => divide(10, 0)).toThrow('Division by zero');
+    //     ↑ アロー関数で包むことで、テスト実行時にエラーをキャッチ
+    
+    // エラーメッセージを指定しない場合（何らかのエラーが発生することを確認）
+    expect(() => divide(5, 0)).toThrow();
+    
+    // 特定のエラータイプを確認することも可能
+    expect(() => divide(1, 0)).toThrow(Error);
+    
+    // よくある間違い：以下は正しく動作しない
+    // expect(divide(10, 0)).toThrow(); // ❌ 関数が即座に実行されてしまう
+  });
+  
+  // 複数の入力パターンをまとめてテストする例
+  test('add: 複数パターンの一括テスト', () => {
+    // テストケースを配列で定義
+    const testCases = [
+      { a: 1, b: 1, expected: 2 },
+      { a: 0, b: 0, expected: 0 },
+      { a: -1, b: 1, expected: 0 },
+      { a: 100, b: -50, expected: 50 }
+    ];
+    
+    // 各テストケースを実行
+    testCases.forEach(({ a, b, expected }) => {
+      expect(add(a, b)).toBe(expected);
+    });
+  });
+});
+```
+
+## 🎭 モック（Mock）の使い方（一行ずつ詳細解説）
+
+### モックとは？
+モックは「偽物の関数」です。実際の処理は行わず、呼び出されたかどうか、どんな引数で呼ばれたかなどを記録・検証できます。
+
+### 基本的なモック関数
+```javascript
+test('モック関数のテスト', () => {
+  // jest.fn(): モック関数を作成
+  // 実際の処理は何もしないが、呼び出し情報を記録する「偽物」の関数
+  const mockFn = jest.fn();
+  
+  // モック関数を実際に呼び出してみる
+  mockFn('arg1', 'arg2');  // 1回目の呼び出し：引数 'arg1', 'arg2'
+  mockFn('arg3');          // 2回目の呼び出し：引数 'arg3'
+  
+  // toHaveBeenCalledTimes(): 関数が何回呼ばれたかをチェック
+  expect(mockFn).toHaveBeenCalledTimes(2);           // 上記で2回呼んでいる
+  
+  // toHaveBeenCalledWith(): 特定の引数で呼ばれたかをチェック
+  expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2'); // 1回目の呼び出しを確認
+  
+  // toHaveBeenLastCalledWith(): 最後の呼び出しの引数をチェック
+  expect(mockFn).toHaveBeenLastCalledWith('arg3');   // 2回目（最後）の呼び出しを確認
+  
+  // その他の便利なマッチャー
+  expect(mockFn).toHaveBeenCalled();                 // 最低1回は呼ばれた
+  
+  // 呼び出し履歴を直接確認することも可能
+  expect(mockFn.mock.calls).toEqual([                // .mock.callsで呼び出し履歴
+    ['arg1', 'arg2'],  // 1回目の引数
+    ['arg3']           // 2回目の引数
+  ]);
+  
+  // 呼び出し回数を直接確認
+  expect(mockFn.mock.calls.length).toBe(2);
+});
+
+test('戻り値を設定したモック', () => {
+  const mockFn = jest.fn();
+  
+  // mockReturnValue(): モック関数の戻り値を設定
+  // 何回呼んでも同じ値を返すようになる
+  mockFn.mockReturnValue(42);              // 常に42を返す設定
+  
+  // mockReturnValueOnce(): 1回だけ特定の値を返す設定
+  // 次回以降は mockReturnValue() で設定した値を返す
+  mockFn.mockReturnValueOnce(100);         // 1回目だけ100を返す
+  
+  // 実際にモック関数を呼び出して確認
+  const result1 = mockFn(); // 1回目の呼び出し
+  expect(result1).toBe(100);  // mockReturnValueOnce()で設定した100
+  
+  const result2 = mockFn(); // 2回目の呼び出し
+  expect(result2).toBe(42);   // mockReturnValue()で設定した42
+  
+  const result3 = mockFn(); // 3回目の呼び出し
+  expect(result3).toBe(42);   // 以降もずっと42
+  
+  // 複数回分の戻り値を設定することも可能
+  const anotherMock = jest.fn();
+  anotherMock
+    .mockReturnValueOnce('first')   // 1回目
+    .mockReturnValueOnce('second')  // 2回目
+    .mockReturnValue('default');    // 3回目以降
+  
+  expect(anotherMock()).toBe('first');
+  expect(anotherMock()).toBe('second');
+  expect(anotherMock()).toBe('default');
+  expect(anotherMock()).toBe('default'); // まだdefault
+});
+```
+
+### モジュールのモック（実践的な例）
+```javascript
+// api.js - テスト対象となるファイル
+const axios = require('axios'); // 外部ライブラリ（HTTP通信）
+
+// ユーザー情報を取得する関数
+async function fetchUser(id) {
+  // axios.get(): 実際のHTTP GET リクエストを送信
+  // 実際のサーバーと通信するため、テストには不向き
+  const response = await axios.get(`/users/${id}`);
+  return response.data; // サーバーから返されたデータを返す
+}
+
+module.exports = { fetchUser };
+```
+
+```javascript
+// api.test.js - 上記APIのテストファイル
+const axios = require('axios');        // axiosモジュールをインポート
+const { fetchUser } = require('./api'); // テスト対象の関数をインポート
+
+// jest.mock(): 指定したモジュール全体をモック化
+// axiosの実際の通信処理を無効化し、偽物の関数に置き換える
+jest.mock('axios'); // ←この行で axios は完全にモック化される
+
+// TypeScriptを使う場合の型付けのための書き方（JavaScriptでも動作）
+const mockedAxios = axios; // モック化されたaxiosを変数に代入
+
+test('fetchUser: ユーザー情報を取得', async () => {
+  // Arrange（準備）: 偽のレスポンスデータを作成
+  const userData = { id: 1, name: 'John' };
+  
+  // モック化されたaxios.getの動作を定義
+  // mockResolvedValue(): Promiseが成功した時の戻り値を設定
+  // 実際のHTTP通信は発生せず、即座にこの値を返す
+  mockedAxios.get.mockResolvedValue({ data: userData });
+  //           ↑                   ↑
+  //    axios.getメソッド        実際のaxiosが返す形式
+  //    をモック化             { data: ... } の構造
+  
+  // Act（実行）: テスト対象の関数を実行
+  const result = await fetchUser(1);
+  
+  // Assert（確認）: 結果の検証
+  expect(result).toEqual(userData);                    // 戻り値が正しい
+  expect(mockedAxios.get).toHaveBeenCalledWith('/users/1'); // 正しいURLで呼び出された
+  expect(mockedAxios.get).toHaveBeenCalledTimes(1);    // 1回だけ呼び出された
+  
+  // モック関数なので実際のHTTP通信は発生していない
+  // ネットワークエラーやサーバーダウンの影響を受けない安定したテスト
+});
+
+test('fetchUser: エラーハンドリングのテスト', async () => {
+  // mockRejectedValue(): Promiseが失敗（reject）した時の値を設定
+  const errorMessage = 'Network Error';
+  mockedAxios.get.mockRejectedValue(new Error(errorMessage));
+  
+  // エラーが発生することを確認
+  // rejects: Promise が reject されることを確認するマッチャー
+  await expect(fetchUser(999)).rejects.toThrow(errorMessage);
+  
+  // または try-catch で書くことも可能
+  try {
+    await fetchUser(999);
+    // ここまで到達したらテスト失敗（エラーが発生しなかった）
+    fail('Expected function to throw');
+  } catch (error) {
+    expect(error.message).toBe(errorMessage);
+  }
+});
+
+// テスト間でモックの状態をクリア
+afterEach(() => {
+  // jest.clearAllMocks(): 全てのモック関数の呼び出し履歴をクリア
+  // 次のテストに影響を与えないようにする重要な処理
+  jest.clearAllMocks();
+});
+```
+
+### 部分的なモック（一部のメソッドだけをモック化）
+```javascript
+// mathUtils.js
+const mathUtils = {
+  add: (a, b) => a + b,
+  multiply: (a, b) => a * b,
+  complexCalculation: (a, b) => {
+    // 複雑な計算（時間がかかる処理と仮定）
+    const sum = mathUtils.add(a, b);
+    const product = mathUtils.multiply(a, b);
+    return sum + product;
+  }
+};
+
+module.exports = mathUtils;
+```
+
+```javascript
+// mathUtils.test.js
+const mathUtils = require('./mathUtils');
+
+// 部分モック：一部のメソッドだけをモック化
+jest.spyOn(mathUtils, 'add').mockReturnValue(10);
+jest.spyOn(mathUtils, 'multiply').mockReturnValue(20);
+
+test('complexCalculation: 部分モックのテスト', () => {
+  const result = mathUtils.complexCalculation(3, 4);
+  
+  // complexCalculationは実際に実行されるが、
+  // addとmultiplyはモック化された値を返す
+  expect(result).toBe(30); // 10(mocked add) + 20(mocked multiply)
+  
+  // モック化したメソッドが正しく呼ばれたかを確認
+  expect(mathUtils.add).toHaveBeenCalledWith(3, 4);
+  expect(mathUtils.multiply).toHaveBeenCalledWith(3, 4);
+});
+```
+
+## ⏰ 非同期処理のテスト（一行ずつ詳細解説）
+
+### 非同期処理とは？
+JavaScriptでは、時間のかかる処理（API通信、ファイル読み込みなど）を非同期で実行します。テストでもこれらを正しく扱う必要があります。
+
+### テスト対象の非同期関数
+```javascript
+// async.js - テスト対象となる非同期関数
+
+// Promise.resolve(): 即座に成功するPromiseを返す関数
+function fetchData() {
+  return Promise.resolve('データ'); // 'データ'という値で成功するPromise
+}
+
+// setTimeout を使った遅延処理
+function fetchDataWithDelay() {
+  // new Promise(): 手動でPromiseを作成
+  return new Promise(resolve => {
+    // setTimeout(): 指定時間後に処理を実行（非同期処理の代表例）
+    setTimeout(() => resolve('遅延データ'), 100);
+    //         ↑                        ↑
+    //    100ms後に実行される処理      遅延時間（ミリ秒）
+  });
+}
+
+// 失敗するPromiseの例
+function fetchDataWithError() {
+  return Promise.reject(new Error('データ取得に失敗'));
+}
+
+module.exports = { fetchData, fetchDataWithDelay, fetchDataWithError };
+```
+
+### 非同期テストの書き方
+```javascript
+// async.test.js - 非同期処理のテストファイル
+const { fetchData, fetchDataWithDelay, fetchDataWithError } = require('./async');
+
+// 【方法1】async/await を使った書き方（推奨）
+test('async/await でPromiseをテスト', async () => {
+  // async をつけることで、この関数内で await が使える
+  // await: Promiseの完了を待つキーワード
+  const data = await fetchData();
+  //     ↑                ↑
+  //  結果を受け取る    Promiseを返す関数
+  
+  // Promiseが解決された後に、通常の値と同じようにテスト
+  expect(data).toBe('データ');
+});
+
+// 【方法2】resolves マッチャーを使った書き方
+test('resolves でPromiseをテスト', () => {
+  // resolves: Promiseが成功することを前提としたマッチャー
+  // expect()にPromiseを直接渡し、.resolvesで成功時の値をテスト
+  return expect(fetchData()).resolves.toBe('データ');
+  //     ↑                                    ↑
+  //  return必須！              成功時の期待値
+});
+
+// ❌ 間違った非同期テストの例
+test('❌ 間違った非同期テスト', () => {
+  fetchData(); // awaitもreturnもない
+  // この時点でPromiseはまだ完了していない可能性が高い
+  // expect(data).toBe('データ'); // dataは未定義
+  
+  // 正しくは上記のように async/await または return を使う
+});
+
+// 時間のかかる非同期処理のテスト
+test('遅延のあるPromise', async () => {
+  // 100ms待つ処理をテスト
+  const data = await fetchDataWithDelay();
+  expect(data).toBe('遅延データ');
+  
+  // 注意：このテストは実際に100ms待つため、テスト実行時間が長くなる
+}, 1000); // ← タイムアウトを1秒に設定（デフォルトは5秒）
+
+// エラーを返すPromiseのテスト
+test('Promise のエラーハンドリング（async/await）', async () => {
+  // try-catch を使ってエラーをキャッチ
+  try {
+    await fetchDataWithError();
+    // ここまで到達したらテスト失敗（エラーが発生しなかった）
+    fail('Expected function to throw');
+  } catch (error) {
+    expect(error.message).toBe('データ取得に失敗');
+  }
+});
+
+// 【方法3】rejects マッチャーを使ったエラーテスト
+test('rejects でPromiseのエラーをテスト', () => {
+  // rejects: Promiseが失敗することを前提としたマッチャー
+  return expect(fetchDataWithError()).rejects.toThrow('データ取得に失敗');
+  //     ↑                                          ↑
+  //  return必須！                          期待するエラーメッセージ
+});
+
+// 複数の非同期処理を同時実行
+test('複数のPromiseを並行実行', async () => {
+  // Promise.all(): 複数のPromiseを並行実行し、全て完了するまで待つ
+  const promises = [
+    fetchData(),              // 'データ'
+    fetchDataWithDelay(),     // '遅延データ'（100ms後）
+    Promise.resolve('即座')   // '即座'
+  ];
+  
+  // 全てのPromiseが完了するまで待つ（最も時間のかかるものに合わせる）
+  const results = await Promise.all(promises);
+  
+  expect(results).toEqual(['データ', '遅延データ', '即座']);
+  expect(results).toHaveLength(3);
+});
+```
+
+### 実践的な例：API通信のテスト
+```javascript
+// userService.js - 実際のAPIと通信する関数
+async function createUser(userData) {
+  // 実際のAPI通信（POST リクエスト）
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(userData),
+  });
+  
+  // レスポンスのステータスをチェック
+  if (!response.ok) {
+    throw new Error(`HTTP Error: ${response.status}`);
+  }
+  
+  // JSONデータを取得
+  return await response.json();
+}
+
+module.exports = { createUser };
+```
+
+```javascript
+// userService.test.js - API通信のテスト
+const { createUser } = require('./userService');
+
+// fetch APIをモック化
+global.fetch = jest.fn();
+
+describe('createUser API', () => {
+  // 各テスト後にモックをクリア
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('ユーザー作成成功', async () => {
+    // Arrange: モックの設定
+    const userData = { name: 'John', email: 'john@test.com' };
+    const responseData = { id: 1, ...userData };
+    
+    // fetch の戻り値をモック化
+    fetch.mockResolvedValue({
+      ok: true,                              // response.ok = true
+      status: 201,                           // response.status = 201
+      json: jest.fn().mockResolvedValue(responseData) // response.json()の戻り値
+    });
+
+    // Act: 実際にテスト対象の関数を実行
+    const result = await createUser(userData);
+
+    // Assert: 結果を検証
+    expect(result).toEqual(responseData);
+    expect(fetch).toHaveBeenCalledWith('/api/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('API通信エラー', async () => {
+    // fetch が失敗レスポンスを返すケース
+    fetch.mockResolvedValue({
+      ok: false,      // response.ok = false
+      status: 400,    // response.status = 400（Bad Request）
+    });
+
+    const userData = { name: 'Invalid' };
+
+    // エラーが発生することを確認
+    await expect(createUser(userData)).rejects.toThrow('HTTP Error: 400');
+  });
+
+  test('ネットワークエラー', async () => {
+    // fetch 自体が失敗するケース（ネットワークエラーなど）
+    fetch.mockRejectedValue(new Error('Network Error'));
+
+    const userData = { name: 'John' };
+
+    await expect(createUser(userData)).rejects.toThrow('Network Error');
+  });
+});
+```
+
+### 非同期処理のタイムアウト制御
+```javascript
+// タイムアウト付きの関数
+function slowOperation() {
+  return new Promise(resolve => {
+    setTimeout(() => resolve('完了'), 2000); // 2秒かかる処理
+  });
+}
+
+test('長時間処理のテスト', async () => {
+  const result = await slowOperation();
+  expect(result).toBe('完了');
+}, 3000); // タイムアウトを3秒に設定（処理時間より長く）
+
+// Jest のタイマーモックを使って時間を制御
+test('タイマーモックを使った高速テスト', async () => {
+  // Jest にタイマー関数をモック化させる
+  jest.useFakeTimers();
+  
+  // 非同期処理を開始（まだ完了しない）
+  const promise = slowOperation();
+  
+  // タイマーを強制的に進める
+  jest.advanceTimersByTime(2000); // 2秒分進める
+  
+  // Promiseが完了しているはず
+  const result = await promise;
+  expect(result).toBe('完了');
+  
+  // 実際の時間は数ミリ秒しか経っていない！
+  
+  // タイマーを元に戻す
+  jest.useRealTimers();
+});
+```
+
+## 🏗️ セットアップ・ティアダウン
+
+### テスト前後の処理
+```javascript
+describe('データベースのテスト', () => {
+  let database;
+
+  // 各テストの前に実行
+  beforeEach(() => {
+    database = new Database();
+    database.connect();
+  });
+
+  // 各テストの後に実行
+  afterEach(() => {
+    database.disconnect();
+  });
+
+  // 最初に1回だけ実行
+  beforeAll(() => {
+    console.log('テストスイート開始');
+  });
+
+  // 最後に1回だけ実行
+  afterAll(() => {
+    console.log('テストスイート終了');
+  });
+
+  test('データの保存', () => {
+    const result = database.save({ name: 'test' });
+    expect(result).toBeTruthy();
+  });
+
+  test('データの取得', () => {
+    database.save({ id: 1, name: 'test' });
+    const result = database.findById(1);
+    expect(result.name).toBe('test');
+  });
+});
+```
+
+## 🎨 実践的な例：ユーザー管理クラス
+
+### テスト対象のクラス
+```javascript
+// User.js
+class User {
+  constructor(name, email) {
+    if (!name || !email) {
+      throw new Error('Name and email are required');
+    }
+    this.name = name;
+    this.email = email;
+    this.isActive = false;
+  }
+
+  activate() {
+    this.isActive = true;
+  }
+
+  deactivate() {
+    this.isActive = false;
+  }
+
+  getInfo() {
+    return {
+      name: this.name,
+      email: this.email,
+      status: this.isActive ? 'active' : 'inactive'
+    };
+  }
+
+  updateEmail(newEmail) {
+    if (!newEmail.includes('@')) {
+      throw new Error('Invalid email format');
+    }
+    this.email = newEmail;
+  }
+}
+
+module.exports = User;
+```
+
+### 包括的なテスト
+```javascript
+// User.test.js
+const User = require('./User');
+
+describe('User クラス', () => {
+  let user;
+
+  beforeEach(() => {
+    user = new User('John Doe', 'john@example.com');
+  });
+
+  describe('コンストラクタ', () => {
+    test('正常なユーザーを作成', () => {
+      expect(user.name).toBe('John Doe');
+      expect(user.email).toBe('john@example.com');
+      expect(user.isActive).toBe(false);
+    });
+
+    test('名前なしでエラーが発生', () => {
+      expect(() => new User('', 'email@example.com')).toThrow('Name and email are required');
+    });
+
+    test('メールなしでエラーが発生', () => {
+      expect(() => new User('Name', '')).toThrow('Name and email are required');
+    });
+  });
+
+  describe('アクティベーション', () => {
+    test('ユーザーをアクティブにする', () => {
+      user.activate();
+      expect(user.isActive).toBe(true);
+    });
+
+    test('ユーザーを非アクティブにする', () => {
+      user.activate();
+      user.deactivate();
+      expect(user.isActive).toBe(false);
+    });
+  });
+
+  describe('情報取得', () => {
+    test('非アクティブユーザーの情報', () => {
+      const info = user.getInfo();
+      expect(info).toEqual({
+        name: 'John Doe',
+        email: 'john@example.com',
+        status: 'inactive'
+      });
+    });
+
+    test('アクティブユーザーの情報', () => {
+      user.activate();
+      const info = user.getInfo();
+      expect(info.status).toBe('active');
+    });
+  });
+
+  describe('メール更新', () => {
+    test('正常なメールアドレスで更新', () => {
+      user.updateEmail('newemail@example.com');
+      expect(user.email).toBe('newemail@example.com');
+    });
+
+    test('無効なメールアドレスでエラー', () => {
+      expect(() => user.updateEmail('invalid-email')).toThrow('Invalid email format');
+    });
+  });
+});
+```
+
+## 📊 カバレッジの確認
+
+```bash
+# カバレッジレポート生成
+npm run test:coverage
+
+# または
+jest --coverage
+```
+
+カバレッジの種類：
+- **Statements**: 文の実行率
+- **Branches**: 分岐の実行率
+- **Functions**: 関数の実行率
+- **Lines**: 行の実行率
+
+## 🛠️ よく使うJestの設定
+
+### jest.config.js
+```javascript
+module.exports = {
+  // テストファイルのパターン
+  testMatch: [
+    "**/__tests__/**/*.js",
+    "**/?(*.)+(spec|test).js"
+  ],
+  
+  // セットアップファイル
+  setupFilesAfterEnv: ["<rootDir>/src/setupTests.js"],
+  
+  // カバレッジの設定
+  collectCoverageFrom: [
+    "src/**/*.js",
+    "!src/index.js"
+  ],
+  
+  // カバレッジの閾値
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  }
+};
+```
+
+## 💡 テストを書く時のコツ
+
+### 1. テスト名は具体的に
+```javascript
+// ❌ 悪い例
+test('ユーザーテスト', () => {});
+
+// ✅ 良い例
+test('有効なメールアドレスでユーザーを作成できる', () => {});
+```
+
+### 2. Arrange-Act-Assert パターン
+```javascript
+test('商品の割引価格を計算する', () => {
+  // Arrange（準備）
+  const product = { price: 1000 };
+  const discountRate = 0.1;
+
+  // Act（実行）
+  const discountedPrice = calculateDiscount(product.price, discountRate);
+
+  // Assert（確認）
+  expect(discountedPrice).toBe(900);
+});
+```
+
+### 3. エラーケースも忘れずに
+```javascript
+describe('パスワードバリデーション', () => {
+  test('正常なパスワードは通る', () => {
+    expect(validatePassword('SecurePass123!')).toBe(true);
+  });
+
+  test('短すぎるパスワードはエラー', () => {
+    expect(() => validatePassword('123')).toThrow('Password too short');
+  });
+
+  test('数字がないパスワードはエラー', () => {
+    expect(() => validatePassword('SecurePassword!')).toThrow('Password must contain numbers');
+  });
+});
+```
+
+## 🚨 よくあるミス（詳細解説と対策）
+
+### 1. 非同期処理でのreturn/await忘れ（最も多いミス）
+```javascript
+// ❌ 悪い例：非同期処理を待たない
+test('❌ 非同期テスト（間違い）', () => {
+  fetchData(); // Promiseを返すが、await も return もしていない
+  // この時点で fetchData() はまだ実行中の可能性が高い
+  expect(something).toBe(expected); // undefined や予期しない値になる
+  // テストは「見かけ上成功」するが、実際は正しくテストされていない
+});
+
+// ✅ 良い例1：async/await を使用
+test('✅ 非同期テスト（async/await）', async () => {
+  //  ↑ async キーワードを追加
+  const result = await fetchData(); // await で完了を待つ
+  //             ↑ await キーワードを追加
+  expect(result).toBe(expected);
+});
+
+// ✅ 良い例2：return を使用
+test('✅ 非同期テスト（return）', () => {
+  return fetchData().then(result => { // return で Promise を返す
+  //  ↑ return キーワードが重要
+    expect(result).toBe(expected);
+  });
+});
+
+// ✅ 良い例3：resolves/rejects マッチャー
+test('✅ 非同期テスト（resolves）', () => {
+  return expect(fetchData()).resolves.toBe(expected);
+  //  ↑ return が必要
+});
+```
+
+### 2. モックのクリア忘れ（テスト間の干渉）
+```javascript
+// 問題のあるテスト例
+describe('❌ モックをクリアしない例', () => {
+  const mockFn = jest.fn();
+
+  test('1つ目のテスト', () => {
+    mockFn('test1');
+    expect(mockFn).toHaveBeenCalledTimes(1);
+    expect(mockFn).toHaveBeenCalledWith('test1');
+  });
+
+  test('2つ目のテスト', () => {
+    mockFn('test2');
+    // ❌ 前のテストの呼び出しがまだ残っているため、実際は2回
+    expect(mockFn).toHaveBeenCalledTimes(1); // これは失敗する！
+    expect(mockFn).toHaveBeenCalledWith('test2');
+  });
+});
+
+// ✅ 正しい例：モックをクリアする
+describe('✅ モックを正しくクリアする例', () => {
+  const mockFn = jest.fn();
+
+  // 各テストの後にモックをクリア
+  afterEach(() => {
+    jest.clearAllMocks(); // 全てのモック関数の履歴をクリア
+    // または mockFn.mockClear(); // 特定のモック関数だけクリア
+  });
+
+  test('1つ目のテスト', () => {
+    mockFn('test1');
+    expect(mockFn).toHaveBeenCalledTimes(1);
+  });
+
+  test('2つ目のテスト', () => {
+    mockFn('test2');
+    expect(mockFn).toHaveBeenCalledTimes(1); // ✅ 正しく1回
+  });
+});
+```
+
+### 3. テストの独立性を保たない（グローバル状態の共有）
+```javascript
+// ❌ 悪い例：テスト間で状態を共有
+describe('❌ 状態を共有する危険な例', () => {
+  let globalUser; // グローバル変数（危険）
+
+  test('ユーザー作成', () => {
+    globalUser = new User('John', 'john@test.com');
+    expect(globalUser.name).toBe('John');
+  });
+
+  test('ユーザー更新', () => {
+    // 前のテストに依存している（危険！）
+    globalUser.updateEmail('newemail@test.com');
+    expect(globalUser.email).toBe('newemail@test.com');
+    // もし前のテストが失敗したら、このテストも失敗する
+  });
+
+  // テストの実行順序が変わると結果が変わってしまう
+  // 並列実行時に問題が発生する可能性
+});
+
+// ✅ 良い例：各テストで独立した状態を用意
+describe('✅ 独立したテスト', () => {
+  let user; // ローカル変数
+
+  // 各テストの前に新しいインスタンスを作成
+  beforeEach(() => {
+    user = new User('John', 'john@test.com'); // 毎回新しいユーザー
+  });
+
+  test('ユーザー作成', () => {
+    expect(user.name).toBe('John');
+    expect(user.email).toBe('john@test.com');
+  });
+
+  test('ユーザー更新', () => {
+    // 前のテストに依存しない独立したテスト
+    user.updateEmail('newemail@test.com');
+    expect(user.email).toBe('newemail@test.com');
+  });
+
+  // 各テストが独立しているため、実行順序や並列実行に影響されない
+});
+```
+
+### 4. エラーテストの書き方ミス
+```javascript
+// ❌ 悪い例：関数を直接実行してしまう
+test('❌ エラーテストの間違い', () => {
+  // 関数が即座に実行され、テスト自体がエラーで止まる
+  expect(divide(10, 0)).toThrow(); // ❌ これは動かない
+});
+
+// ✅ 良い例：アロー関数で包む
+test('✅ エラーテストの正解', () => {
+  // アロー関数で包むことで、テスト実行時にエラーをキャッチ
+  expect(() => divide(10, 0)).toThrow(); // ✅ 正しい書き方
+  
+  // 引数がある場合も同様
+  expect(() => divide(10, 0)).toThrow('Division by zero');
+  
+  // 非同期関数のエラーテスト
+  expect(async () => {
+    await fetchDataWithError();
+  }).rejects.toThrow();
+});
+```
+
+### 5. 浮動小数点の比較ミス
+```javascript
+// ❌ 悪い例：浮動小数点を厳密比較
+test('❌ 浮動小数点の間違った比較', () => {
+  const result = 0.1 + 0.2;
+  console.log(result); // 0.30000000000000004（誤差あり）
+  
+  expect(result).toBe(0.3); // ❌ 失敗する（誤差のため）
+});
+
+// ✅ 良い例：toBeCloseTo を使用
+test('✅ 浮動小数点の正しい比較', () => {
+  const result = 0.1 + 0.2;
+  
+  expect(result).toBeCloseTo(0.3);    // ✅ 近似値で比較
+  expect(result).toBeCloseTo(0.3, 5); // ✅ 精度を指定して比較
+  
+  // その他の例
+  expect(Math.PI).toBeCloseTo(3.14159, 5);
+  expect(1/3).toBeCloseTo(0.333333, 6);
+});
+```
+
+### 6. オブジェクト比較でのtoBe使用ミス
+```javascript
+// ❌ 悪い例：オブジェクトにtoBe()を使用
+test('❌ オブジェクト比較の間違い', () => {
+  const user1 = { name: 'John', age: 30 };
+  const user2 = { name: 'John', age: 30 };
+  
+  // 同じ内容だが異なるオブジェクト参照なので失敗
+  expect(user1).toBe(user2); // ❌ 失敗する
+});
+
+// ✅ 良い例：オブジェクトにはtoEqual()を使用
+test('✅ オブジェクト比較の正解', () => {
+  const user1 = { name: 'John', age: 30 };
+  const user2 = { name: 'John', age: 30 };
+  
+  // 内容を比較するのでOK
+  expect(user1).toEqual(user2); // ✅ 成功する
+  
+  // 同じ参照の場合はtoBe()もOK
+  const user3 = user1;
+  expect(user1).toBe(user3); // ✅ 同じ参照なので成功
+});
+```
+
+### 7. 非同期テストのタイムアウトエラー
+```javascript
+// ❌ 問題のあるコード：時間がかかりすぎる
+test('❌ 時間のかかる処理', async () => {
+  // 10秒かかる処理（Jestのデフォルトタイムアウト5秒を超える）
+  const result = await verySlowFunction(); // 10秒かかる
+  expect(result).toBe('完了');
+  // ❌ タイムアウトエラーで失敗
+});
+
+// ✅ 解決法1：タイムアウト時間を延長
+test('✅ タイムアウト時間を指定', async () => {
+  const result = await verySlowFunction();
+  expect(result).toBe('完了');
+}, 15000); // 15秒に設定
+
+// ✅ 解決法2：モックを使って高速化
+test('✅ モックで高速化', async () => {
+  // 実際の処理をモック化して高速化
+  jest.spyOn(apiModule, 'slowApiCall')
+    .mockResolvedValue('モックデータ');
+  
+  const result = await fastFunction(); // モックなので高速
+  expect(result).toBe('モックデータ');
+});
+
+// ✅ 解決法3：タイマーモックを使用
+test('✅ タイマーモックで時間制御', () => {
+  jest.useFakeTimers();
+  
+  const promise = delayedFunction(5000); // 5秒の遅延
+  
+  // 時間を強制的に進める
+  jest.advanceTimersByTime(5000);
+  
+  return expect(promise).resolves.toBe('完了');
+});
+```
+
+### 8. テスト名が不明確
+```javascript
+// ❌ 悪い例：何をテストしているか不明
+describe('User', () => {
+  test('test1', () => { /* ... */ });
+  test('works', () => { /* ... */ });
+  test('User test', () => { /* ... */ });
+  test('should work correctly', () => { /* ... */ });
+});
+
+// ✅ 良い例：具体的で分かりやすいテスト名
+describe('User クラス', () => {
+  test('有効なメールアドレスでユーザーを作成できる', () => { /* ... */ });
+  test('無効なメールアドレスの場合エラーを投げる', () => { /* ... */ });
+  test('ユーザーをアクティブ状態に変更できる', () => { /* ... */ });
+  test('ユーザー情報を正しい形式で取得できる', () => { /* ... */ });
+});
+```
+
+### 🛡️ ミスを防ぐベストプラクティス
+
+```javascript
+// 推奨されるテストファイルの基本構造
+describe('テスト対象の名前', () => {
+  // テスト共通の設定
+  beforeEach(() => {
+    // 各テスト前の準備処理
+  });
+  
+  afterEach(() => {
+    // 各テスト後のクリーンアップ
+    jest.clearAllMocks();
+  });
+  
+  describe('機能グループ1', () => {
+    test('具体的なテストケース名', async () => {
+      // Arrange（準備）
+      const input = 'テストデータ';
+      
+      // Act（実行）
+      const result = await functionToTest(input);
+      
+      // Assert（確認）
+      expect(result).toBe('期待値');
+    });
+  });
+});
+```
+
+## 📚 参考リンク
+
+- [Jest 公式ドキュメント](https://jestjs.io/docs/getting-started)
+- [JavaScript テストの基本](https://javascript.info/testing-mocha)
+
+---
+
+このチートシートを使って、効果的なテストを書きましょう！テストは品質の高いコードを書くための重要なスキルです。🚀
